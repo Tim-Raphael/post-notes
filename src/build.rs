@@ -7,8 +7,8 @@ use tera::{Context, Tera};
 
 use crate::content_map::ContentMap;
 use crate::navigation::Navigation;
-use crate::post_note::PostNote;
 use crate::settings::Settings;
+use crate::types::PostNote;
 
 /// Builds the static site by rendering templates and copying assets.
 ///
@@ -23,7 +23,7 @@ use crate::settings::Settings;
 /// # Errors
 ///
 /// Returns an error if template loading, directory creation, file copying, or rendering fails.
-pub fn build(
+pub fn website(
     notes: &[PostNote],
     content_map: ContentMap,
     navigation: Navigation,
@@ -32,16 +32,16 @@ pub fn build(
     let template_pattern = format!("{}/**/*.html", settings.path.template.display());
     let tera = Tera::new(&template_pattern)?;
     for asset_path in &settings.path.assets {
-        copy_static_dir(asset_path, &settings.path.output)?;
+        static_dir(asset_path, &settings.path.output)?;
     }
-    copy_media_files(notes, &settings.path.input, &settings.path.output)?;
-    write_content_map(content_map, &settings.path.output)?;
-    render_notes(notes, &navigation, &tera, &settings.path.output)?;
+    media(notes, &settings.path.input, &settings.path.output)?;
+    map(content_map, &settings.path.output)?;
+    pages(notes, &navigation, &tera, &settings.path.output)?;
 
     Ok(())
 }
 
-fn render_notes(
+fn pages(
     notes: &[PostNote],
     navigation: &Navigation,
     tera: &Tera,
@@ -94,7 +94,7 @@ fn render_notes(
 /// # Errors
 ///
 /// Returns an error if any filesystem operation fails (reading, creating directories, copying).
-fn copy_static_dir(from: &Path, to: &Path) -> io::Result<()> {
+fn static_dir(from: &Path, to: &Path) -> io::Result<()> {
     // Ensure the destination directory exists before copying contents.
     fs::create_dir_all(to)?;
     // Iterate through all entries in the source directory.
@@ -104,7 +104,7 @@ fn copy_static_dir(from: &Path, to: &Path) -> io::Result<()> {
         let to = to.join(entry.file_name());
         if entry.file_type()?.is_dir() {
             // Recursively copy subdirectories.
-            copy_static_dir(&from, &to)?;
+            static_dir(&from, &to)?;
         } else {
             fs::copy(&from, &to)?;
         }
@@ -113,19 +113,18 @@ fn copy_static_dir(from: &Path, to: &Path) -> io::Result<()> {
     Ok(())
 }
 
-fn copy_media_files(notes: &[PostNote], src: &Path, destination: &Path) -> anyhow::Result<()> {
-    fs::create_dir_all(destination)?;
+fn media(notes: &[PostNote], src: &Path, out: &Path) -> anyhow::Result<()> {
+    fs::create_dir_all(out)?;
     notes.par_iter().for_each(|note| {
         note.media_links.par_iter().for_each(|media_link| {
             let media_path = PathBuf::from(media_link.to_string());
             let output_media_path = PathBuf::from(media_link.to_string());
             if let Some(parent) = media_path.parent()
-                && let Err(err) = fs::create_dir_all(destination.join(parent))
+                && let Err(err) = fs::create_dir_all(out.join(parent))
             {
                 log::warn!("Could not create parent directory: {}", err);
             };
-            if let Err(err) = fs::copy(src.join(&media_path), destination.join(&output_media_path))
-            {
+            if let Err(err) = fs::copy(src.join(&media_path), out.join(&output_media_path)) {
                 log::warn!(
                     "Could not copy file {:?} into output directory: {}",
                     &src.join(&media_path),
@@ -138,9 +137,9 @@ fn copy_media_files(notes: &[PostNote], src: &Path, destination: &Path) -> anyho
     Ok(())
 }
 
-fn write_content_map(content_map: ContentMap, output_path: &Path) -> anyhow::Result<()> {
-    let map_json = serde_json::to_string(&json!(content_map))?;
-    let path = output_path.join("map.json");
+fn map(content: ContentMap, out: &Path) -> anyhow::Result<()> {
+    let map_json = serde_json::to_string(&json!(content))?;
+    let path = out.join("map.json");
 
     fs::write(&path, map_json)?;
     log::info!("Created the content map at: {}", path.display());
