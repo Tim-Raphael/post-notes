@@ -1,96 +1,15 @@
 use anyhow::Error;
 use clap::Parser;
 use config::{Config, File};
-use serde::{Deserialize, Serialize};
-use std::default::Default;
-use std::path::PathBuf;
 
-const CONFIG_PATH: &str = "./Config.toml";
-
-const DEFAULT_INPUT_PATH: &str = "./notes";
-const DEFAULT_OUTPUT_PATH: &str = "./output";
-const DEFAULT_TEMPLATE_PATH: &str = "./templates";
-const DEFAULT_ASSET_PATH: &str = "./assets";
-
-/// All settings that can be cofnigured regarding the directories which will be
-/// referenced during the site generation.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
-pub struct PathSettings {
-    /// Input directory path.
-    pub input: PathBuf,
-    /// Output directory path.
-    pub output: PathBuf,
-    /// Template directory path.
-    pub template: PathBuf,
-    /// Asset directory paths.
-    pub assets: Vec<PathBuf>,
-}
-
-impl Default for PathSettings {
-    fn default() -> Self {
-        PathSettings {
-            input: PathBuf::from(DEFAULT_INPUT_PATH),
-            output: PathBuf::from(DEFAULT_OUTPUT_PATH),
-            template: PathBuf::from(DEFAULT_TEMPLATE_PATH),
-            assets: vec![PathBuf::from(DEFAULT_ASSET_PATH)],
-        }
-    }
-}
-
-/// Optional path settings used to parse command line arguments - mirros
-/// [PathSettings].
-#[derive(
-    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default, Parser,
-)]
-struct CliPathSettings {
-    /// Input directory path.
-    #[arg(short, long)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input: Option<PathBuf>,
-    /// Output directory path.
-    #[arg(short, long)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output: Option<PathBuf>,
-    /// Template directory path.
-    #[arg(short, long)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub template: Option<PathBuf>,
-    /// Asset directory path.
-    #[arg(short, long)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[clap(short, long, value_parser, num_args = 1.., value_delimiter = ' ')]
-    pub assets: Option<Vec<PathBuf>>,
-}
-
-/// Configurable application settings which get derived from command line
-/// arguments and the `Config.toml`.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
-pub struct Settings {
-    /// Settings related to the paths of input files or assets and the like.
-    pub path: PathSettings,
-}
-
-/// Command line arguments - mirrors [Settings] structure.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default, Parser)]
-#[command(name = "post-notes")]
-#[command(about = "Building a cute digital garden.")]
-#[command(version)]
-struct Args {
-    /// Config file path.
-    #[arg(short, long, default_value = CONFIG_PATH)]
-    #[serde(skip)]
-    config: String,
-    /// Path settings.
-    #[command(flatten)]
-    path: CliPathSettings,
-}
+use crate::types;
 
 /// Read Settings from `Config.toml` or command line arguments.
 fn merge_settings(
     default: Config,
     file: Option<Config>,
     args: Option<Config>,
-) -> Result<Settings, Error> {
+) -> Result<types::settings::Settings, Error> {
     let mut raw_settings = Config::builder().add_source(default);
     if let Some(file) = file {
         raw_settings = raw_settings.add_source(file);
@@ -99,7 +18,9 @@ fn merge_settings(
         raw_settings = raw_settings.add_source(args);
     };
 
-    Ok(raw_settings.build()?.try_deserialize::<Settings>()?)
+    Ok(raw_settings
+        .build()?
+        .try_deserialize::<types::settings::Settings>()?)
 }
 
 /// Loads the configured settings from either `Config.toml` or the command line
@@ -107,10 +28,10 @@ fn merge_settings(
 /// - If both are set the command line arguments overwrites the settings from
 ///   the `Config.toml`.
 /// - If neither are set the default settings are used.
-pub fn get_settings() -> Settings {
-    let args = Args::parse();
+pub fn get_settings() -> types::settings::Settings {
+    let args = types::settings::cli::Args::parse();
     // Interpret default settings.
-    let config_default = Config::try_from(&Settings::default())
+    let config_default = Config::try_from(&types::settings::Settings::default())
         .map_err(|err| log::error!("Could not interpret the default settings as config: {err}"))
         .ok();
     // Load and interpret config file.
@@ -134,26 +55,26 @@ pub fn get_settings() -> Settings {
         "Could not load settings from config file or command line arguments, using default settings instead."
     );
 
-    Settings::default()
+    types::settings::Settings::default()
 }
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+
     use super::*;
     use config::FileFormat;
     use pretty_assertions::assert_eq;
 
     #[test]
     fn test_merge_default_settings_with_config_file() {
-        let expected = Settings {
-            path: PathSettings {
+        let expected = types::settings::Settings {
+            path: types::settings::Path {
                 input: PathBuf::from("../notes"),
-                output: DEFAULT_OUTPUT_PATH.into(),
-                assets: vec![DEFAULT_ASSET_PATH.into()],
-                template: DEFAULT_TEMPLATE_PATH.into(),
+                ..types::settings::Path::default()
             },
         };
-        let default_settings = Config::try_from(&Settings::default()).unwrap();
+        let default_settings = Config::try_from(&types::settings::Settings::default()).unwrap();
         let config_file = Config::builder()
             .add_source(File::from_str("[path]\ninput='../notes'", FileFormat::Toml))
             .build()
@@ -164,17 +85,16 @@ mod tests {
     }
 
     #[test]
-    fn test_merge_defualt_settings_with_args() {
-        let expected = Settings {
-            path: PathSettings {
+    fn test_merge_default_settings_with_args() {
+        let expected = types::settings::Settings {
+            path: types::settings::Path {
                 input: PathBuf::from("../notes"),
-                output: DEFAULT_OUTPUT_PATH.into(),
-                assets: vec![DEFAULT_ASSET_PATH.into()],
-                template: DEFAULT_TEMPLATE_PATH.into(),
+                ..types::settings::Path::default()
             },
         };
-        let default_settings = Config::try_from(&Settings::default()).unwrap();
-        let args = Args::try_parse_from(["post_notes", "-i", "../notes"]).unwrap();
+        let default_settings = Config::try_from(&types::settings::Settings::default()).unwrap();
+        let args =
+            types::settings::cli::Args::try_parse_from(["post_notes", "-i", "../notes"]).unwrap();
         let config_args = Config::try_from(&args).unwrap();
         let produced = merge_settings(default_settings, None, Some(config_args)).unwrap();
 

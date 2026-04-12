@@ -5,10 +5,7 @@ use std::{fs, io};
 use serde_json::json;
 use tera::{Context, Tera};
 
-use crate::content_map::ContentMap;
-use crate::navigation::Navigation;
-use crate::settings::Settings;
-use crate::types::PostNote;
+use crate::types;
 
 /// Builds the static site by rendering templates and copying assets.
 ///
@@ -24,10 +21,10 @@ use crate::types::PostNote;
 ///
 /// Returns an error if template loading, directory creation, file copying, or rendering fails.
 pub fn website(
-    notes: &[PostNote],
-    content_map: ContentMap,
-    navigation: Navigation,
-    settings: &Settings,
+    notes: &[types::note::Note],
+    content_map: types::map::Content,
+    navigation: types::map::Navigation,
+    settings: &types::settings::Settings,
 ) -> anyhow::Result<()> {
     let template_pattern = format!("{}/**/*.html", settings.path.template.display());
     let tera = Tera::new(&template_pattern)?;
@@ -42,8 +39,8 @@ pub fn website(
 }
 
 fn pages(
-    notes: &[PostNote],
-    navigation: &Navigation,
+    notes: &[types::note::Note],
+    navigation: &types::map::Navigation,
     tera: &Tera,
     output_path: &Path,
 ) -> anyhow::Result<()> {
@@ -113,7 +110,7 @@ fn static_dir(from: &Path, to: &Path) -> io::Result<()> {
     Ok(())
 }
 
-fn media(notes: &[PostNote], src: &Path, out: &Path) -> anyhow::Result<()> {
+fn media(notes: &[types::note::Note], src: &Path, out: &Path) -> anyhow::Result<()> {
     fs::create_dir_all(out)?;
     notes.par_iter().for_each(|note| {
         note.media_links.par_iter().for_each(|media_link| {
@@ -137,7 +134,7 @@ fn media(notes: &[PostNote], src: &Path, out: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn map(content: ContentMap, out: &Path) -> anyhow::Result<()> {
+fn map(content: types::map::Content, out: &Path) -> anyhow::Result<()> {
     let map_json = serde_json::to_string(&json!(content))?;
     let path = out.join("map.json");
 

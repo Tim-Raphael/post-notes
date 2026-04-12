@@ -1,15 +1,15 @@
+use crate::types;
+
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
 
 use serde::{Deserialize, Serialize};
 
-use crate::post_note::{InternalLink, PostNote, Tag};
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RawTagNode {
-    pub tag: Tag,
-    pub child_tags: HashMap<Tag, RawTagNode>,
-    pub files: HashSet<InternalLink>,
+    pub tag: types::note::Tag,
+    pub child_tags: HashMap<types::note::Tag, RawTagNode>,
+    pub files: HashSet<types::html::link::Internal>,
 }
 
 impl Hash for RawTagNode {
@@ -21,7 +21,7 @@ impl Hash for RawTagNode {
 impl Default for RawTagNode {
     fn default() -> Self {
         RawTagNode {
-            tag: Tag::from("#"),
+            tag: types::note::Tag::from("#"),
             child_tags: HashMap::new(),
             files: HashSet::new(),
         }
@@ -44,7 +44,7 @@ impl From<RawTagNode> for TagNode {
             let mut files = raw_tag_node
                 .files
                 .into_iter()
-                .collect::<Vec<InternalLink>>();
+                .collect::<Vec<types::html::link::Internal>>();
             files.sort_unstable();
             files
         };
@@ -59,9 +59,9 @@ impl From<RawTagNode> for TagNode {
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct TagNode {
-    pub tag: Tag,
+    pub tag: types::note::Tag,
     pub child_tags: Vec<TagNode>,
-    pub files: Vec<InternalLink>,
+    pub files: Vec<types::html::link::Internal>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -69,12 +69,12 @@ pub struct Navigation {
     pub root: TagNode,
 }
 
-impl From<&Vec<PostNote>> for Navigation {
-    fn from(notes: &Vec<PostNote>) -> Self {
+impl From<&[types::note::Note]> for Navigation {
+    fn from(notes: &[types::note::Note]) -> Self {
         let mut root = RawTagNode::default();
 
         for note in notes {
-            for tag in &note.properties.tags {
+            for tag in &note.frontmatter.tags {
                 let parts: Vec<&str> = tag.split('/').filter(|p| !p.is_empty()).collect();
 
                 if parts.is_empty() {
@@ -84,7 +84,7 @@ impl From<&Vec<PostNote>> for Navigation {
                 let mut current_node = &mut root;
 
                 for part in &parts {
-                    let tag_part = Tag::from(*part);
+                    let tag_part = types::note::Tag::from(*part);
 
                     current_node = current_node
                         .child_tags

@@ -5,15 +5,13 @@ use regex::Regex;
 use std::borrow::Cow;
 use std::path::Path;
 
-use crate::content_map::ContentMap;
-use crate::navigation::Navigation;
-use crate::types::{Html, InternalLink, MediaLink, PostNote, Properties};
+use crate::types;
 
 /// Parses raw markdown sources into public notes.
 ///
 /// Notes that fail parsing or are marked as private are skipped while logging
 /// errors, preserving the current behavior.
-pub fn notes(raw: Vec<(std::path::PathBuf, String)>) -> Vec<PostNote> {
+pub fn notes(raw: Vec<types::note::Source>) -> Vec<types::note::Note> {
     raw.into_iter()
         .filter_map(|(path_buf, raw_md)| {
             let post_note_entry = match PostNoteEntry::new(&path_buf, &raw_md) {
@@ -44,17 +42,17 @@ pub fn notes(raw: Vec<(std::path::PathBuf, String)>) -> Vec<PostNote> {
 }
 
 /// Builds the content search map from parsed notes.
-pub fn content(notes: &[PostNote]) -> ContentMap<'_> {
-    ContentMap::from(notes)
+pub fn content(notes: &[types::note::Note]) -> types::map::Content<'_> {
+    types::map::Content::from(notes)
 }
 
 /// Builds the navigation tree from parsed notes.
-pub fn navigation(notes: &[PostNote]) -> Navigation {
-    Navigation::from(notes)
+pub fn navigation(notes: &[types::note::Note]) -> types::map::Navigation {
+    types::map::Navigation::from(notes)
 }
 
 enum PostNoteEntry {
-    Public(Box<PostNote>),
+    Public(Box<types::note::Note>),
     Private,
 }
 
@@ -78,15 +76,15 @@ impl PostNoteEntry {
 
         let root = parse_document(&arena, &md, &options);
 
-        let file_name = InternalLink::try_from(file_name.to_path_buf())?;
-        let mut maybe_properties: Option<Properties> = Option::None;
-        let mut links: Vec<InternalLink> = Vec::new();
+        let file_name = types::html::link::Internal::try_from(file_name.to_path_buf())?;
+        let mut maybe_properties: Option<types::note::Frontmatter> = Option::None;
+        let mut links: Vec<types::html::link::Internal> = Vec::new();
 
         for node in root.descendants() {
             match &mut node.data.borrow_mut().value {
                 NodeValue::FrontMatter(raw_front_matter) => {
                     let raw_yml = raw_front_matter.replace("---", "").replace("\\n", "");
-                    let front_matter: Properties = serde_yaml::from_str(&raw_yml)?;
+                    let front_matter: types::note::Frontmatter = serde_yaml::from_str(&raw_yml)?;
 
                     if !front_matter.public {
                         return Ok(Self::Private);
@@ -96,7 +94,7 @@ impl PostNoteEntry {
                 }
 
                 NodeValue::WikiLink(link) => {
-                    let internal_link = InternalLink::from(link.url.to_owned());
+                    let internal_link = types::html::link::Internal::from(link.url.to_owned());
                     link.url = internal_link.to_string();
                     links.push(internal_link);
                 }
@@ -138,21 +136,21 @@ impl PostNoteEntry {
         let mut html_buf = Vec::new();
         format_html(root, &options, &mut html_buf)?;
 
-        let html = Html::try_from(html_buf)?;
+        let html = types::html::Html::try_from(html_buf)?;
 
-        Ok(Self::Public(Box::new(PostNote::new(
+        Ok(Self::Public(Box::new(types::note::Note::new(
             file_name, properties, links, media, html,
         ))))
     }
 }
 
 // This is probably going to be a temporary solution.
-fn media(raw: &str) -> Result<(Cow<'_, str>, Vec<MediaLink>)> {
+fn media(raw: &str) -> Result<(Cow<'_, str>, Vec<types::html::link::Media>)> {
     let re = Regex::new(r"!\[\[(media/[^|\]]+)(?:\|([^\[\]]+))?\]\]")?;
     let mut media_links = Vec::new();
 
     let md = re.replace_all(raw, |caps: &regex::Captures| {
-        let link = MediaLink::from(caps[1].to_string());
+        let link = types::html::link::Media::from(caps[1].to_string());
         let title = caps.get(2).map_or("", |m| m.as_str());
 
         media_links.push(link.clone());

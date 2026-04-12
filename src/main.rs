@@ -1,10 +1,9 @@
 use anyhow::{Context, Result};
 
 mod build;
-mod content_map;
+mod defaults;
 mod fetch;
 mod map;
-mod navigation;
 mod settings;
 mod types;
 

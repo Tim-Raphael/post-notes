@@ -1,16 +1,14 @@
 use anyhow::Result;
 use rayon::prelude::*;
 use std::fs;
-use std::path::{Path, PathBuf};
 
-/// Raw note source loaded from disk.
-pub type RawNoteSource = (PathBuf, String);
+use crate::types;
 
 /// Reads markdown note files from the input directory.
 ///
 /// Non-markdown files are ignored. Directory entry and file-read failures are
 /// logged and skipped to preserve the current resilient behavior.
-pub fn notes(path: &Path) -> Result<Vec<RawNoteSource>> {
+pub fn notes(path: &std::path::Path) -> Result<Vec<types::note::Source>> {
     Ok(fs::read_dir(path)?
         .par_bridge()
         .filter_map(|entry_result| match entry_result {
