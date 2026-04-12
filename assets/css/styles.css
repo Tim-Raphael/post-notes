@@ -1,0 +1,549 @@
+/* reset */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    /* Base16 color components - Gruvbox Dark Medium */
+    /* Author: Dawid Kurek (dawikur@gmail.com), morhetz (https://github.com/morhetz/gruvbox) */
+    /* ---- */
+    --color-base00: #282828;
+    /* --- */
+    --color-base01: #3c3836;
+    /* -- */
+    --color-base02: #504945;
+    /* - */
+    --color-base03: #665c54;
+    /* + */
+    --color-base04: #bdae93;
+    /* ++ */
+    --color-base05: #d5c4a1;
+    /* +++ */
+    --color-base06: #ebdbb2;
+    /* ++++ */
+    --color-base07: #fbf1c7;
+    /* red */
+    --color-base08: #fb4934;
+    /* orange */
+    --color-base09: #fe8019;
+    /* yellow */
+    --color-base0A: #fabd2f;
+    /* green */
+    --color-base0B: #b8bb26;
+    /* aqua/cyan */
+    --color-base0C: #8ec07c;
+    /* blue */
+    --color-base0D: #83a598;
+    /* purple */
+    --color-base0E: #d3869b;
+    /* brown */
+    --color-base0F: #d65d0e;
+
+    /* breakpoints */
+    /* these don't work there just so you can easily find and replace */
+    --bp-medium: 667px;
+    --bp-large: 1024px;
+
+    /* max-width */
+    --max-width: 1620px;
+
+    /* spaces */
+    --space-small: 10px;
+    --space-medium: 25px;
+    --space-large: 35px;
+
+    @media only screen and (min-width: 667px) {
+        --space-small: 25px;
+        --space-medium: 50px;
+        --space-large: 75px;
+    }
+
+    @media only screen and (min-width: 1024px) {
+        --space-small: 50px;
+        --space-medium: 100px;
+        --space-large: 150px;
+    }
+
+    /* gaps */
+    --gap-small: 8px;
+    --gap-medium: 16px;
+    --gap-large: 32px;
+
+    /* font-sizes */
+    --font-family: "JetBrains Mono", monospace;
+    --font-size-base: 16px;
+    --font-size-small: 0.875rem;
+    --font-size-medium: 1rem;
+    --font-size-large: 1.25rem;
+
+    /* border */
+    --border-radius: var(--gap-small);
+    --border: 2px solid var(--color-base03);
+}
+
+html {
+    overflow-x: hidden;
+}
+
+::-moz-selection {
+    background-color: var(--color-base03);
+}
+
+::selection {
+    background-color: var(--color-base03);
+}
+
+::-webkit-scrollbar {
+    width: var(--gap-small);
+    height: var(--gap-small);
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-base02);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-base03);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-base0B);
+}
+
+/* body */
+body {
+    font-family: var(--font-family);
+    line-height: 1.5em;
+    font-size: var(--font-size-base);
+    font-weight: 200;
+    background-color: var(--color-base00);
+    color: var(--color-base05);
+}
+
+/* navigation */
+nav {
+    border-radius: var(--border-radius);
+    border: var(--border);
+    position: relative;
+    padding: var(--gap-medium);
+
+    @media only screen and (min-width: 1024px) {
+        position: sticky;
+        top: var(--space-small);
+    }
+}
+
+nav > ul {
+    margin: 0;
+}
+
+nav ul {
+    margin-bottom: 0;
+}
+
+nav label {
+    cursor: pointer;
+    color: var(--color-base0E);
+}
+
+nav label::before {
+    content: "#";
+}
+
+nav ul li {
+    width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+nav ul li::before {
+    position: relative;
+    left: 0;
+    transform: none;
+}
+
+nav ul li:has(label)::before,
+nav ul li:first-of-type:has(label)::before,
+nav ul li:last-of-type:has(label)::before {
+    content: unset;
+}
+
+nav input[type="checkbox"] {
+    display: none;
+}
+
+nav input[type="checkbox"] ~ div {
+    display: none;
+}
+
+nav input[type="checkbox"]:checked ~ div {
+    display: unset;
+}
+
+/* sementic sections */
+header,
+main {
+    max-width: var(--max-width);
+    display: block;
+    padding: var(--space-small) var(--space-medium);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+header {
+    padding-top: var(--space-large);
+}
+
+*:has(> aside) {
+    gap: var(--gap-medium);
+    display: flex;
+    flex-direction: column;
+
+    @media only screen and (min-width: 1024px) {
+        gap: var(--gap-large);
+        flex-direction: row;
+    }
+}
+
+*:has(> aside) > *:not(aside) {
+    @media only screen and (min-width: 1024px) {
+        min-width: 66.66%;
+        flex-basis: 66.66%;
+    }
+}
+
+aside {
+    @media only screen and (min-width: 1024px) {
+        min-width: 33.33%;
+        flex-basis: 33.33%;
+    }
+}
+
+footer {
+    width: 100%;
+    position: fixed;
+    display: flex;
+    bottom: 0;
+    left: 0;
+    justify-content: space-between;
+    font-size: var(--font-size-small);
+}
+
+footer::before {
+    content: "";
+    height: 100%;
+    width: 100vw;
+    position: absolute;
+    z-index: -1;
+    background-color: var(--color-base01);
+}
+
+footer > div {
+    display: flex;
+}
+
+footer > div:first-of-type {
+    padding-left: var(--gap-small);
+}
+
+footer > div:last-of-type {
+    padding-right: var(--gap-small);
+}
+
+footer > div > div {
+    display: contents;
+}
+
+footer > div:first-of-type > div::before,
+footer > div:last-of-type > div::after {
+    content: "|";
+    text-decoration: none;
+    color: var(--color-base04);
+}
+
+section {
+    padding: var(--space-small) 0;
+}
+
+article {
+    border: var(--border);
+    border-radius: var(--border-radius);
+    max-width: 1024px;
+    position: relative;
+    margin: auto;
+    padding: var(--gap-medium);
+}
+
+article > div {
+    border: var(--border);
+    border-radius: var(--border-radius);
+    position: relative;
+    margin: var(--gap-small) 0 var(--gap-medium);
+    padding: var(--gap-medium);
+}
+
+table {
+    width: 100%;
+    display: block;
+    overflow-x: auto;
+    margin-bottom: var(--gap-medium);
+    border-spacing: 2px;
+}
+
+table thead th {
+    border: var(--border);
+    font-weight: 700;
+    padding: var(--gap-small);
+    text-align: left;
+}
+
+table thead tr th:first-of-type {
+    border-radius: var(--border-radius) 0 0 0;
+}
+
+table thead tr th:last-of-type {
+    border-radius: 0 var(--border-radius) 0 0;
+}
+
+table tbody td {
+    border: var(--border);
+    font-weight: 200;
+    padding: var(--gap-small);
+}
+
+table tbody tr:last-of-type td:first-of-type {
+    border-radius: 0 0 0 var(--border-radius);
+}
+
+table tbody tr:last-of-type td:last-of-type {
+    border-radius: 0 0 var(--border-radius) 0;
+}
+
+/* section description */
+nav:hover,
+article:hover {
+    border-color: var(--color-base0B);
+}
+
+nav > span:first-of-type,
+article > span:first-of-type {
+    position: absolute;
+    bottom: 100%;
+    transform: translateY(50%);
+    line-height: 1em;
+    padding: 0 var(--gap-small);
+    background-color: var(--color-base00);
+}
+
+nav:hover > span:first-of-type,
+article:hover > span:first-of-type {
+    color: var(--color-base05);
+}
+
+/* text */
+h1,
+.h1,
+h2,
+.h2,
+h3,
+.h3,
+h4,
+.h4,
+h5,
+.h5,
+h6,
+.h6 {
+    color: var(--color-base0B);
+    font-size: var(--font-size-large);
+    font-weight: 700;
+    margin-top: var(--space-small);
+    margin-bottom: var(--gap-medium);
+}
+
+h1,
+.h1 {
+    margin-top: 0;
+}
+
+h1::before,
+.h1::before {
+    content: "# ";
+}
+
+h2::before,
+.h2::before {
+    content: "## ";
+}
+
+h3::before,
+.h3::before {
+    content: "### ";
+}
+
+h4::before,
+.h4::before {
+    content: "#### ";
+}
+
+h5::before,
+.h5::before {
+    content: "##### ";
+}
+
+h6::before,
+.h6::before {
+    content: "###### ";
+}
+
+p {
+    display: block;
+    font-size: var(--font-size-medium);
+    color: var(--color-base05);
+    margin-bottom: var(--gap-medium);
+}
+
+span {
+    color: var(--color-base03);
+}
+
+span::before {
+    content: "/* ";
+}
+
+span::after {
+    content: " */";
+}
+
+ul,
+ol {
+    margin-left: var(--gap-large);
+    margin-bottom: var(--gap-medium);
+}
+
+ol li,
+ul li {
+    position: relative;
+    list-style-type: none;
+}
+
+ul li::before {
+    content: "├─";
+    position: absolute;
+    left: calc(-1 * var(--gap-small));
+    transform: translateX(-100%);
+}
+
+ul li:last-of-type::before {
+    content: "└─";
+}
+
+ol {
+    counter-reset: item;
+}
+
+ol li::before {
+    content: "[" counter(item) "]";
+    position: absolute;
+    left: calc(-1 * var(--gap-small));
+    counter-increment: item;
+    transform: translateX(-100%);
+    color: var(--color-base09);
+}
+
+ol li:first-of-type::before {
+    /* start counting by 0 */
+    counter-increment: none;
+}
+
+hr {
+    border: 1px solid var(--color-base03);
+    margin: var(--gap-medium) 0;
+}
+
+/* media */
+img,
+video {
+    box-shadow: var(--elevation-1);
+    border: var(--border);
+    border-radius: var(--border-radius);
+    max-height: 100%;
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+    margin-bottom: var(--spacing-small);
+}
+
+pre {
+    border: var(--border);
+    border-radius: var(--border-radius);
+    page-break-inside: avoid;
+    margin-bottom: var(--gap-medium);
+    word-wrap: break-word;
+    padding: var(--gap-medium);
+    white-space: pre-wrap;
+    background-color: var(--color-base01);
+}
+
+pre code {
+    padding: 0;
+}
+
+code {
+    position: relative;
+}
+
+code::before {
+    content: "";
+    height: calc(100% + calc(var(--gap-small) / 4));
+    width: calc(100% + var(--gap-small));
+    z-index: -1;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--color-base01);
+}
+
+/* links */
+a {
+    color: var(--color-base0D);
+    text-decoration: underline;
+    transition: var(--transition-fast);
+}
+
+a:hover,
+a:focus {
+    color: var(--color-base0C);
+    text-decoration: none;
+}
+
+a:active {
+    color: var(--color-base0E);
+    text-decoration: none;
+}
+
+/* input */
+input[type="text"] {
+    width: 100%;
+    border: var(--border);
+    border-radius: var(--border-radius);
+    display: block;
+    position: relative;
+    font-family: var(--font-family);
+    padding: var(--gap-small);
+    color: var(--color-base05);
+    font-size: var(--font-base);
+    background-color: var(--color-base01);
+    caret-shape: block;
+    caret-color: var(--color-base05);
+}
+
+input[type="text"]:focus {
+    outline: none;
+    border-color: var(--color-base0B);
+}
