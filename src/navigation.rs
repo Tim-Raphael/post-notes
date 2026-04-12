@@ -30,17 +30,25 @@ impl Default for RawTagNode {
 
 impl From<RawTagNode> for TagNode {
     fn from(raw_tag_node: RawTagNode) -> Self {
-        let mut child_tags = raw_tag_node
-            .child_tags
-            .into_iter()
-            .map(|value| value.1.into())
-            .collect::<Vec<TagNode>>();
-        child_tags.sort_unstable();
-        let mut files = raw_tag_node
-            .files
-            .into_iter()
-            .collect::<Vec<InternalLink>>();
-        files.sort_unstable();
+        let child_tags = {
+            let mut child_tags = raw_tag_node
+                .child_tags
+                .into_iter()
+                .map(|value| value.1.into())
+                .collect::<Vec<TagNode>>();
+            child_tags.sort_unstable();
+            child_tags
+        };
+
+        let files = {
+            let mut files = raw_tag_node
+                .files
+                .into_iter()
+                .collect::<Vec<InternalLink>>();
+            files.sort_unstable();
+            files
+        };
+
         Self {
             tag: raw_tag_node.tag,
             child_tags,
